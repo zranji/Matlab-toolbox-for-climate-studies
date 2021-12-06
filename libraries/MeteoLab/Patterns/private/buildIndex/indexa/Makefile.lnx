@@ -1,0 +1,81 @@
+# Project: indexa
+
+CPP  = g++
+CC   = gcc
+RES  = 
+INCS = -I../include -I../gribsimp_buildindex -I../ 
+OBJ  = indexa.o ../gribsimp_buildindex/upd_child_errmsg.o ../gribsimp_buildindex/apply_bitmap.o ../gribsimp_buildindex/gbyte.o ../gribsimp_buildindex/grbseek.o ../gribsimp_buildindex/grib_dec_heads.o ../gribsimp_buildindex/gribdec.o ../gribsimp_buildindex/gribgetbds.o ../gribsimp_buildindex/gribgetbms.o ../gribsimp_buildindex/gribgetgds.o ../gribsimp_buildindex/gribgetpds.o ../gribsimp_buildindex/hdr_print.o ../gribsimp_buildindex/init_dec_struct.o ../gribsimp_buildindex/init_gribhdr.o ../gribsimp_buildindex/init_struct.o ../gribsimp_buildindex/printer.o ../gribsimp_buildindex/prt_err.o ../proutils.o ../buildIndex.o $(RES)
+LINKOBJ  = indexa.o ../gribsimp_buildindex/upd_child_errmsg.o ../gribsimp_buildindex/apply_bitmap.o ../gribsimp_buildindex/gbyte.o ../gribsimp_buildindex/grbseek.o ../gribsimp_buildindex/grib_dec_heads.o ../gribsimp_buildindex/gribdec.o ../gribsimp_buildindex/gribgetbds.o ../gribsimp_buildindex/gribgetbms.o ../gribsimp_buildindex/gribgetgds.o ../gribsimp_buildindex/gribgetpds.o ../gribsimp_buildindex/hdr_print.o ../gribsimp_buildindex/init_dec_struct.o ../gribsimp_buildindex/init_gribhdr.o ../gribsimp_buildindex/init_struct.o ../gribsimp_buildindex/printer.o ../gribsimp_buildindex/prt_err.o ../proutils.o ../buildIndex.o $(RES)
+LIBS =  -m32 -lm
+BIN  = indexa
+CXXFLAGS = $(CXXINCS)  
+CFLAGS = -m32 -fpic $(INCS)  
+RM = rm -f
+
+.PHONY: all all-before all-after clean clean-custom
+
+all: all-before indexa all-after
+
+
+clean: clean-custom
+	${RM} $(OBJ) $(BIN)
+
+$(BIN): $(OBJ)
+	$(CC) $(LINKOBJ) -o "indexa" $(LIBS)
+
+indexa.o: indexa.c
+	$(CC) -c indexa.c -o indexa.o $(CFLAGS)
+
+../gribsimp_buildindex/upd_child_errmsg.o: ../gribsimp_buildindex/upd_child_errmsg.c
+	$(CC) -c ../gribsimp_buildindex/upd_child_errmsg.c -o ../gribsimp_buildindex/upd_child_errmsg.o $(CFLAGS)
+
+../gribsimp_buildindex/apply_bitmap.o: ../gribsimp_buildindex/apply_bitmap.c
+	$(CC) -c ../gribsimp_buildindex/apply_bitmap.c -o ../gribsimp_buildindex/apply_bitmap.o $(CFLAGS)
+
+../gribsimp_buildindex/gbyte.o: ../gribsimp_buildindex/gbyte.c
+	$(CC) -c ../gribsimp_buildindex/gbyte.c -o ../gribsimp_buildindex/gbyte.o $(CFLAGS)
+
+../gribsimp_buildindex/grbseek.o: ../gribsimp_buildindex/grbseek.c
+	$(CC) -c ../gribsimp_buildindex/grbseek.c -o ../gribsimp_buildindex/grbseek.o $(CFLAGS)
+
+../gribsimp_buildindex/grib_dec_heads.o: ../gribsimp_buildindex/grib_dec_heads.c
+	$(CC) -c ../gribsimp_buildindex/grib_dec_heads.c -o ../gribsimp_buildindex/grib_dec_heads.o $(CFLAGS)
+
+../gribsimp_buildindex/gribdec.o: ../gribsimp_buildindex/gribdec.c
+	$(CC) -c ../gribsimp_buildindex/gribdec.c -o ../gribsimp_buildindex/gribdec.o $(CFLAGS)
+
+../gribsimp_buildindex/gribgetbds.o: ../gribsimp_buildindex/gribgetbds.c
+	$(CC) -c ../gribsimp_buildindex/gribgetbds.c -o ../gribsimp_buildindex/gribgetbds.o $(CFLAGS)
+
+../gribsimp_buildindex/gribgetbms.o: ../gribsimp_buildindex/gribgetbms.c
+	$(CC) -c ../gribsimp_buildindex/gribgetbms.c -o ../gribsimp_buildindex/gribgetbms.o $(CFLAGS)
+
+../gribsimp_buildindex/gribgetgds.o: ../gribsimp_buildindex/gribgetgds.c
+	$(CC) -c ../gribsimp_buildindex/gribgetgds.c -o ../gribsimp_buildindex/gribgetgds.o $(CFLAGS)
+
+../gribsimp_buildindex/gribgetpds.o: ../gribsimp_buildindex/gribgetpds.c
+	$(CC) -c ../gribsimp_buildindex/gribgetpds.c -o ../gribsimp_buildindex/gribgetpds.o $(CFLAGS)
+
+../gribsimp_buildindex/hdr_print.o: ../gribsimp_buildindex/hdr_print.c
+	$(CC) -c ../gribsimp_buildindex/hdr_print.c -o ../gribsimp_buildindex/hdr_print.o $(CFLAGS)
+
+../gribsimp_buildindex/init_dec_struct.o: ../gribsimp_buildindex/init_dec_struct.c
+	$(CC) -c ../gribsimp_buildindex/init_dec_struct.c -o ../gribsimp_buildindex/init_dec_struct.o $(CFLAGS)
+
+../gribsimp_buildindex/init_gribhdr.o: ../gribsimp_buildindex/init_gribhdr.c
+	$(CC) -c ../gribsimp_buildindex/init_gribhdr.c -o ../gribsimp_buildindex/init_gribhdr.o $(CFLAGS)
+
+../gribsimp_buildindex/init_struct.o: ../gribsimp_buildindex/init_struct.c
+	$(CC) -c ../gribsimp_buildindex/init_struct.c -o ../gribsimp_buildindex/init_struct.o $(CFLAGS)
+
+../gribsimp_buildindex/printer.o: ../gribsimp_buildindex/printer.c
+	$(CC) -c ../gribsimp_buildindex/printer.c -o ../gribsimp_buildindex/printer.o $(CFLAGS)
+
+../gribsimp_buildindex/prt_err.o: ../gribsimp_buildindex/prt_err.c
+	$(CC) -c ../gribsimp_buildindex/prt_err.c -o ../gribsimp_buildindex/prt_err.o $(CFLAGS)
+
+../proutils.o: ../proutils.c
+	$(CC) -c ../proutils.c -o ../proutils.o $(CFLAGS)
+
+../buildIndex.o: ../buildIndex.c
+	$(CC) -c ../buildIndex.c -o ../buildIndex.o $(CFLAGS)

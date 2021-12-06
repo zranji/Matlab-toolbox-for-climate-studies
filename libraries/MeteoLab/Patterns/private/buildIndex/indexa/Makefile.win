@@ -1,0 +1,88 @@
+# Project: indexa
+# Compiler: Default GCC compiler
+# Compiler Type: MingW 3
+# Makefile created by wxDev-C++ 7.3 on 09/12/11 00:46
+
+WXLIBNAME = wxmsw28
+CPP       = g++.exe
+CC        = gcc.exe
+WINDRES   = "windres.exe"
+OBJ       = obj/indexa.o obj/upd_child_errmsg.o obj/apply_bitmap.o obj/gbyte.o obj/grbseek.o obj/grib_dec_heads.o obj/gribdec.o obj/gribgetbds.o obj/gribgetbms.o obj/gribgetgds.o obj/gribgetpds.o obj/hdr_print.o obj/init_dec_struct.o obj/init_gribhdr.o obj/init_struct.o obj/printer.o obj/prt_err.o obj/proutils.o obj/buildIndex.o
+LINKOBJ   = "obj/indexa.o" "obj/upd_child_errmsg.o" "obj/apply_bitmap.o" "obj/gbyte.o" "obj/grbseek.o" "obj/grib_dec_heads.o" "obj/gribdec.o" "obj/gribgetbds.o" "obj/gribgetbms.o" "obj/gribgetgds.o" "obj/gribgetpds.o" "obj/hdr_print.o" "obj/init_dec_struct.o" "obj/init_gribhdr.o" "obj/init_struct.o" "obj/printer.o" "obj/prt_err.o" "obj/proutils.o" "obj/buildIndex.o"
+LIBS      = -L"C:/Program Files (x86)/Dev-Cpp/Lib"  -g3 
+INCS      = -I"C:/Program Files (x86)/Dev-Cpp/Include" -I"../include" -I"../gribsimp_buildindex"
+CXXINCS   = -I"C:/Program Files (x86)/Dev-Cpp/lib/gcc/mingw32/3.4.5/include" -I"C:/Program Files (x86)/Dev-Cpp/include/c++/3.4.5/backward" -I"C:/Program Files (x86)/Dev-Cpp/include/c++/3.4.5/mingw32" -I"C:/Program Files (x86)/Dev-Cpp/include/c++/3.4.5" -I"C:/Program Files (x86)/Dev-Cpp/include" -I"C:/Program Files (x86)/Dev-Cpp/" -I"C:/Program Files (x86)/Dev-Cpp/include/common/wx/msw" -I"C:/Program Files (x86)/Dev-Cpp/include/common/wx/generic" -I"C:/Program Files (x86)/Dev-Cpp/include/common/wx/html" -I"C:/Program Files (x86)/Dev-Cpp/include/common/wx/protocol" -I"C:/Program Files (x86)/Dev-Cpp/include/common/wx/xml" -I"C:/Program Files (x86)/Dev-Cpp/include/common/wx/xrc" -I"C:/Program Files (x86)/Dev-Cpp/include/common/wx" -I"C:/Program Files (x86)/Dev-Cpp/include/common" -I"../include" -I"../gribsimp_buildindex"
+RCINCS    = --include-dir "C:/PROGRA~2/Dev-Cpp/include/common"
+BIN       = indexa.exe
+DEFINES   = 
+CXXFLAGS  = $(CXXINCS) $(DEFINES)   -g3
+CFLAGS    = $(INCS) $(DEFINES)   -g3
+GPROF     = gprof.exe
+RM        = rm -f
+LINK      = g++.exe
+
+.PHONY: all all-before all-after clean clean-custom
+all: all-before $(BIN) all-after
+
+clean: clean-custom
+	$(RM) $(LINKOBJ) "$(BIN)"
+
+$(BIN): $(OBJ)
+	$(LINK) $(LINKOBJ) -o "$(BIN)" $(LIBS) 
+
+obj/indexa.o: $(GLOBALDEPS) indexa.c
+	$(CC) -c indexa.c -o obj/indexa.o $(CFLAGS)
+
+obj/upd_child_errmsg.o: $(GLOBALDEPS) ../gribsimp_buildindex/upd_child_errmsg.c
+	$(CC) -c ../gribsimp_buildindex/upd_child_errmsg.c -o obj/upd_child_errmsg.o $(CFLAGS)
+
+obj/apply_bitmap.o: $(GLOBALDEPS) ../gribsimp_buildindex/apply_bitmap.c
+	$(CC) -c ../gribsimp_buildindex/apply_bitmap.c -o obj/apply_bitmap.o $(CFLAGS)
+
+obj/gbyte.o: $(GLOBALDEPS) ../gribsimp_buildindex/gbyte.c
+	$(CC) -c ../gribsimp_buildindex/gbyte.c -o obj/gbyte.o $(CFLAGS)
+
+obj/grbseek.o: $(GLOBALDEPS) ../gribsimp_buildindex/grbseek.c
+	$(CC) -c ../gribsimp_buildindex/grbseek.c -o obj/grbseek.o $(CFLAGS)
+
+obj/grib_dec_heads.o: $(GLOBALDEPS) ../gribsimp_buildindex/grib_dec_heads.c
+	$(CC) -c ../gribsimp_buildindex/grib_dec_heads.c -o obj/grib_dec_heads.o $(CFLAGS)
+
+obj/gribdec.o: $(GLOBALDEPS) ../gribsimp_buildindex/gribdec.c
+	$(CC) -c ../gribsimp_buildindex/gribdec.c -o obj/gribdec.o $(CFLAGS)
+
+obj/gribgetbds.o: $(GLOBALDEPS) ../gribsimp_buildindex/gribgetbds.c
+	$(CC) -c ../gribsimp_buildindex/gribgetbds.c -o obj/gribgetbds.o $(CFLAGS)
+
+obj/gribgetbms.o: $(GLOBALDEPS) ../gribsimp_buildindex/gribgetbms.c
+	$(CC) -c ../gribsimp_buildindex/gribgetbms.c -o obj/gribgetbms.o $(CFLAGS)
+
+obj/gribgetgds.o: $(GLOBALDEPS) ../gribsimp_buildindex/gribgetgds.c
+	$(CC) -c ../gribsimp_buildindex/gribgetgds.c -o obj/gribgetgds.o $(CFLAGS)
+
+obj/gribgetpds.o: $(GLOBALDEPS) ../gribsimp_buildindex/gribgetpds.c
+	$(CC) -c ../gribsimp_buildindex/gribgetpds.c -o obj/gribgetpds.o $(CFLAGS)
+
+obj/hdr_print.o: $(GLOBALDEPS) ../gribsimp_buildindex/hdr_print.c
+	$(CC) -c ../gribsimp_buildindex/hdr_print.c -o obj/hdr_print.o $(CFLAGS)
+
+obj/init_dec_struct.o: $(GLOBALDEPS) ../gribsimp_buildindex/init_dec_struct.c
+	$(CC) -c ../gribsimp_buildindex/init_dec_struct.c -o obj/init_dec_struct.o $(CFLAGS)
+
+obj/init_gribhdr.o: $(GLOBALDEPS) ../gribsimp_buildindex/init_gribhdr.c
+	$(CC) -c ../gribsimp_buildindex/init_gribhdr.c -o obj/init_gribhdr.o $(CFLAGS)
+
+obj/init_struct.o: $(GLOBALDEPS) ../gribsimp_buildindex/init_struct.c
+	$(CC) -c ../gribsimp_buildindex/init_struct.c -o obj/init_struct.o $(CFLAGS)
+
+obj/printer.o: $(GLOBALDEPS) ../gribsimp_buildindex/printer.c
+	$(CC) -c ../gribsimp_buildindex/printer.c -o obj/printer.o $(CFLAGS)
+
+obj/prt_err.o: $(GLOBALDEPS) ../gribsimp_buildindex/prt_err.c
+	$(CC) -c ../gribsimp_buildindex/prt_err.c -o obj/prt_err.o $(CFLAGS)
+
+obj/proutils.o: $(GLOBALDEPS) ../proutils.c
+	$(CC) -c ../proutils.c -o obj/proutils.o $(CFLAGS)
+
+obj/buildIndex.o: $(GLOBALDEPS) ../buildIndex.c
+	$(CC) -c ../buildIndex.c -o obj/buildIndex.o $(CFLAGS)

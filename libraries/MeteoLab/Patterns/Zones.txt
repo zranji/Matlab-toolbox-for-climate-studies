@@ -1,0 +1,21 @@
+#######################################################################
+# Examples of the book
+
+#Related to GCMData NCEP/Iberia_NCEP netCDF files
+#NAO (2.5 degree resolution)
+Iberia_NCEP=$METEOLAB_HOME/../PatternsData/NCEP/Iberia_NCEP
+
+#Related to GCMData ERA40/Global25SLP_SST GRIB files
+#NAO (2.5 degree resolution)
+Nao=$METEOLAB_HOME/../PatternsData/NAO
+
+#Related to GCMData ERA40/Spain10
+#Spain (1 degree resolution for the Iberian Peninsula)
+Iberia=$METEOLAB_HOME/../PatternsData/IberiaPatterns/IberiaTZRUV
+
+#NorthernBasin (1 degree resolution Northern basin)
+NorthernBasin=$METEOLAB_HOME/../PatternsData/IberiaPatterns/NorthernBasinTZRUV
+
+#Related to GCMData ECMWF/Iberia10_Precip
+#IberiaPrecip (1 degree resolution convective and large scale precipitation over Spain)
+IberiaPrecip=$METEOLAB_HOME/../PatternsData/IberiaPatterns/IberiaPrecip

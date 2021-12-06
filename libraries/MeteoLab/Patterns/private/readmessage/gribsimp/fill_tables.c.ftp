@@ -1,0 +1,1223 @@
+/*
+   NAME:         fill_tables
+   DESCRIPTION:  FILLS THE GRIB TABLE STRUCTURES FOR USE BY PRINTER.
+   DATE:         07 DEC 1996
+   PROGRAMMER:   TODD J. KIENITZ, SAIC
+   
+   REVISIONS:
+   03 FEB 1996 MODIFIED BY STEVE LOWE, SAIC
+   15 APR 1996 added call to ftp remote table /Nakajima, SAIC
+   07 JUN 1996 Nakajima, SAIC
+	-changed Fill_tables;
+        -added new load_table2;
+	-added new load_table3;
+*/
+
+#include <stdio.h>
+#include <stdlib.h>  /* for malloc, System */
+#include <string.h>
+#include "grib.h"
+#include "tables.h"  /* includes table definitions for table2, its
+                        sub-tables, and table3 structures */
+extern table2  *parmtab;
+extern table3  *lvltab;
+extern tables  mgotab;
+extern int     debug;
+
+int read_file_entry (FILE *infile, long *line, char *final_block);
+int locate_sect_heading (FILE *infile, char *heading, long *line);
+int load_table2 (FILE *infile, table2 *parmtab);
+int load_table3 (FILE *infile, table3 *lvltab);
+int FTP_getfile (char *filenm, char *loc_pathnm);
+
+char	*ptr,dummy[100],blk[100];
+char	heading[100];	/* holds heading of Section */
+int	sub,cnt,id, num, i;
+long	line=1;
+
+/* 
+*
+*
+*=======================================================================
+*   A.  FUNCTION  fill_tables
+*       PURPOSE:  
+*          fill the GRIB table structures from external file for use
+*          by printer routine.
+*
+*       INPUT :
+*          filnam[80] file name for tables
+*          *pathnm    path name to tables
+*
+*       RETURN CODE:
+*          0> success, structures are filled;
+*             Variables that have changed:
+*                 table2 *parmtab   
+*                     Pointer to 255 table2 structures; 
+*                     Points to NULL if it's 1st time in fill_tbls;  
+*                     Storage is then allocated & then filled;
+*                     Elements 250-254 represents the Sub-tables and 
+*                     each points to a malloced block of 256*sizeof(TABLE2);
+*                 table3 *lvltab    
+*                     pointer to 255 table3 structure; 
+*                     Points to NULL if it's 1st time in fill_tbls;  
+*                     Storage is then allocated and then filled;
+*                 tables mgotab
+*                     already defined in gribsimp; 
+*                     table structure for geom, model and orig_ctrs ID's
+*          1> failed;
+*=======================================================================
+*/
+int  fill_tables (char filnam[80], char *pathnm)
+{
+  FILE    *infile;                   /* input file containing table info */
+
+  char    dummy[100];                /* input variable for entire line */
+  char    mybuff[100];               /* working var */
+  char    *ptr;                      /* working var */
+  char    dummy_char, dummy_char2;   /* tests for space and end of section */
+  char    string[100];
+
+  int     i, j, m;                   /* loop counters */
+  int	  pass;			     /* 2 passes to ck external table */
+  int     Index;
+  int     temp;
+  int     cnt;			     /* temp counter */
+  long    line;			     /* line number in external file */
+
+  DPRINT ("Enter fill_tables to load  %s/%s\n",pathnm, filnam);
+
+/*
+* A.1       INITIALIZE originating center, model, and geom arrays 
+*/
+   memset ((void *) &mgotab, '\0', sizeof(tables)); 
+
+/*
+*
+* A.2       IF (parm table is not yet defined)
+* A.2.1	        ALLOCATE storage for 255 elements !exit on error
+*               !Table 2's elements 250 thru 254 are sub-tables and each 
+*               !points to another sub-set of 256 elements;
+* A.2.2         FOR (each sub-table supported)
+*                  ALLOCATE storage for 5 Parameter Sub-Tables !exit on error
+*               ENDFOR
+* A.2       ENDIF
+*/
+     if (parmtab==NULL) {
+
+	parmtab= (table2 *) malloc(sizeof(table2)* NPARM);
+        if (parmtab==NULL) exit(1);
+
+        for (i=250; i <= 254; i++) {	/* sub-tables */
+           parmtab[i].sub_tab2= (table2 *)malloc(sizeof(table2)*NPARM);
+	   if (parmtab[i].sub_tab2==NULL) 
+	     {
+	       fprintf(stderr,
+	       "Error Allocating storage for Table2[%d]\n",i);
+	       exit(1);
+	     }
+	   }
+        }
+
+/*
+*
+* A.3       FOR (each element 0 thru NPARM of Table 2)
+*               IF (it's not sub-tables) THEN
+*                   INITIALIZE that element to zero
+*               ELSE 
+*                   INITIALIZE all 255 elements of sub-table to Zero
+*               ENDIF
+* A.3       ENDFOR
+*/
+     for (i=0; i< NPARM; i++) {/* zero out entire structure */
+        if (i < 250 || i == 255)	
+	     memset ((void *)&parmtab[i], '\0', sizeof(table2));
+        else memset ((void *)parmtab[i].sub_tab2, '\0', 256*sizeof(table2));
+        }
+
+/*
+*
+* A.4       IF (level table is not yet defined)
+*	        ALLOCATE storage for 255 elements !exit on error
+*           ENDIF
+*/
+     if (lvltab==NULL) {
+	lvltab= (table3 *) malloc(sizeof(table3)* NLEV);
+        if (lvltab==NULL) exit(1);
+        }
+
+/*
+*
+* A.5       INITIALIZE all 255 elements of Table 3 to Zero
+*/
+     memset ((void *)lvltab, '\0', sizeof(table3));
+
+
+/* ****************************
+   ** Originating Center Table **
+   *****************************/
+   sprintf (dummy, "%s/orig_ctrs", pathnm);
+/*
+*
+* A.6       LOOP two times    !ftp may be needed
+*/
+   for (pass=1; pass <= 2 ; pass++) {
+/*
+* A.6.1.a     IF (OPEN "orig_ctrs" from local "pathnm" failed)
+*             THEN      ! file not ready, ftp it down
+*/
+      if ((infile = fopen(dummy, "r"))==NULL) 
+	{ 
+	   /* file not ready. ftp it down if not already done so */ 
+	   if (pass== 1) 
+		{ /* 1st pass: * no local file, try to Ftp it down */
+/*
+* A.6.1.a.1      IF (haven't ftp-ed yet) THEN     !1st pass
+*                    FUNCTION FTP_getfile   !ftp "orig_ctrs" fr remote's pathnm
+*                    IF (ftp failed) THEN
+*                        JUST skip
+*                    ENDIF
+*/
+		   DPRINT ("File %s not avail locally. Will attempt to FTP.\n",
+		   dummy);
+		   if (FTP_getfile ("orig_ctrs", pathnm) != 0) break;
+		}
+	   else {  /* 2nd pass: * tried ftp, but file still not avail, skip; */
+/*
+* A.6.1.a.2      ELSE     !2nd pass: already ftp-ed  but still cannot open file
+*                    SKIP
+*                ENDIF
+*/
+                   fprintf(stderr,"Warning: Unable to open Originating Centers file!\n");
+		   break; 
+		}
+	}
+
+/*
+* A.6.1.b     ELSE    !file opened ok
+*/
+      else /* file ready */
+	{
+           if (pass==2) DPRINT ("Successfully FTP '%s';\n",dummy);
+/* 
+* A.6.1.b.1      GETS and discards the first 4 lines !comments
+*/
+	   for(i=0;i<3;++i) fgets(dummy, sizeof(dummy), infile);
+
+/*
+* A.6.1.b.2      WHILE (not end of file yet)
+*/
+           cnt=0; 
+           while (!feof(infile)) 
+	   {
+/*
+* A.6.1.b.2.1       FUNCTION read_file_entry !get  next line from file orig_ctrs
+* A.6.1.b.2.2       IF (line doesn't start w/ a number) THEN
+*                      SKIP this line
+*                   ENDIF
+* A.6.1.b.2.3       IF (originatind center id is out of range) THEN
+*                      SKIP this line
+*                   ENDIF
+* A.6.1.b.2.4       EXTRACT Center Name, using ctr_id as element index
+*/
+   	        if (read_file_entry (infile, &line, dummy)) break;
+		if (!isdigit(dummy[0])) continue;
+	       	if (sscanf(dummy,"%d%s",&Index, mybuff) != 2)
+		    continue;	/* skip if doesn't begin w/ a number */
+		if (Index < 0 || Index == NOCTR)
+		   continue;	/* skip if out of range */
+		/* mybuff points to 1 word of ctrname (multiple words) */
+	       	strncpy(mgotab.orig_ctr[Index], strstr(dummy, mybuff), 60);
+                ++cnt;
+   	    } /* whiule not eof */
+/*
+* A.6.1.b.2      ENDWHILE
+*/
+
+/*
+* A.6.1.b.3      CLOSE "orig_ctrs"
+* A.6.1.b.4      BREAK out of 2-pass loop    !already done
+*/
+	   DPRINT ("File 'orig_ctrs' has %d entries\n", cnt);
+	   close(infile);
+	   break;  /* don't loop */
+        } /* FILE opened OK*/
+/*
+* A.6.1.b     ENDIF   !file opened ok
+*/
+      } /* PASS loop */
+/*
+* A.6      ENDLOOP! pass loop
+*/
+
+
+/******************************/
+/* Opens table file */
+/*
+*
+* A.7     FORM name of the local external GRIB table file
+*         !ie. "localpathn"/"filenam"
+*/
+   sprintf (dummy, "%s/%s", pathnm, filnam);
+   
+/*
+*
+* A.8     IF (cannot open file for reading)
+*         THEN
+*/
+   if((infile = fopen(dummy, "r")) == NULL) {
+
+      DPRINT ("File %s not avail locally. Will attempt to FTP\n",dummy);
+
+/*
+* A.8.1      FUNCTION  FTP_getfile  !filename from remote "pathnm"
+*            IF (ftp failed OR unable to open file for reading) 
+*            THEN
+*/
+      if ( FTP_getfile (filnam, pathnm) != 0  
+	|| (infile = fopen(dummy, "r")) == NULL) 
+ 
+	{
+/*
+*               PRINT correct usage
+*               EXIT 0
+*            ENDIF
+*/
+        fprintf(stderr,
+	"\n********* ERROR OPENING TABLE *************\n"
+        "\nOPTION1:\n"
+        "  If you have a table YOU know is correct, you may specify it with -s\n"
+        "\n      ie:  gribsimp -i infile -D -s table_name\n"
+        "\nOPTION2:\n"
+        "  Use only the GRIB standard table (with NO local definitions)\n"
+        "\n      ie:  gribsimp -i infile -D -t \n"
+        "\nOPTION3:\n"
+        "  You can always run the decoder without table look-ups to get at the\n"
+        "  data and grid definitions; contact the Originating Center to get the\n"
+        "  correct local table.\n");
+        exit(0);	/* abort program */
+	}
+        DPRINT ("Loading ftp-ed Defn file: '%s'\n",dummy);
+     }
+/*
+* A.8     ENDIF
+*/
+
+/***********/
+/* TABLE 2 */
+/***********/
+/* 
+*
+* A.9     FUNCTION load_table2  !FILL table 2 structure
+*         IF (error) THEN
+*            FUNCTION exit_handler;
+*         ENDIF
+*/ 
+  if (load_table2 (infile, parmtab))  exit_handler(1);
+
+/***********/
+/* TABLE 3 */
+/***********/
+/* 
+*
+* A.10    FUNCTION load_table3  !FILL table 3 structure
+*         IF (error) THEN
+*            FUNCTION exit_handler;
+*         ENDIF
+*/ 
+  if (load_table3(infile, lvltab))  exit_handler(1);
+
+/*  ***************************************  
+    MODEL ID SECTION  :
+     LOAD THE 'GENERATING PROCESS DEFNS; (MODEL_TYPE)
+     format:  model_id "model name and info"
+   *****************************************
+*
+* A.11    SET up heading for Model section
+*         FUNCTION locate_sec_heading !locate heading in input file
+*         IF (didn't see it) THEN
+*             RETURN 1
+*         ENDIF
+*/
+   strcpy (heading, "Generating Process Def");
+   if (locate_sect_heading (infile, heading, &line)) {
+	DPRINT ("Leaving fill_tables with status=1\n"); 
+	return(1);
+	}
+
+/*
+*
+* A.12    WHILE (not end of file yet) DO
+*/
+   for (cnt=0; !feof(infile); ) 
+     {
+/*
+* A.12.1     FUNCTION read_file_entry  !get next line
+*            IF (error) 
+*               BREAK !quit loading model section
+*            ENDIF
+*/
+        if (read_file_entry (infile, &line, blk)) break;
+
+/*
+* A.12.2     IF (line begins w/not a nubmer) 
+*               SKIP line
+*            ENDIF
+*/
+	if (!isdigit (blk[0])) continue;
+
+/*
+* A.12.3     EXTRACT model id and a string
+*            IF (not successful) THEN
+*               PRINT error
+*               RETURN 1
+*/
+        if (sscanf (blk, "%d%s", &id, dummy) != 2) 
+   	{ fprintf(stderr,
+	  "Line %d: fail to get model_id, model_type\n", line);
+	  DPRINT ("Leaving fill_tables with status=1\n"); 
+   	  return(1);}
+/*
+*            ELSE if (id is out of range)
+*               PRINT error message
+*               RETURN 1
+*            ENDIF
+*/
+	else if (id<0 || id >255) {
+	  fprintf(stderr,
+	  "Line %d: Model_id=%d, must be between 0 and 255\n",
+	  line, id); 
+	  DPRINT ("Leaving fill_tables with error status=1\n");
+	  return(1); }
+
+/* 
+* A.12.4     STORE model name, using model_id as index
+*/
+	strncpy (mgotab.model[id], strstr(blk, dummy), 60);
+	cnt++;
+    } 
+/*
+* A.12    ENDWHILE
+*/
+   DPRINT ("Model Defn table has %d entries\n", cnt);
+	
+
+
+/****************************************
+   GEOM Id TABLE :
+   LOAD THE GEOMETRY INFO
+   format:  geom_id  "geom_name"
+* 
+* A.13    SET up heading for Geometry section
+*         FUNCTION locate_sec_heading !locate heading in input file
+*         IF (didn't see it) THEN
+*             RETURN 1
+*         ENDIF
+*/
+
+   strcpy (heading, "Pre-defined geometries");
+   if (locate_sect_heading (infile, heading, &line)) {
+	DPRINT ("Leaving fill_tables with error status=1\n");
+	return(1);
+	}
+
+/*
+*
+* A.14    FOR (each line until end of file)
+*/
+   for (cnt=0; !feof(infile); ) 
+     {
+/*
+* A.14.1      FUNCTION read_file_entry  !get next line
+*             IF (error) THEN
+*                 RETURN 1
+*             ENDIF
+*/
+        if (read_file_entry (infile, &line, blk)) break;
+
+/* 
+* A.14.2      IF (line doesn't start with number) THEN
+*                 SKIP line !loop again
+*             ENDIF
+*/
+	if (!isdigit (blk[0])) continue;
+
+/*
+* A.14.3      IF (not able to extract geom_id and string)
+*             THEN
+*                 PRINT error
+*                 RETURN 1
+*/
+        if (sscanf (blk, "%d%s", &id, dummy) != 2) 
+   	{ fprintf(stderr,
+	  "Line %d: fail to get Geom_id, Geom_name\n", line);
+	DPRINT ("Leaving fill_tables with status=1\n"); 
+   	 return(1);}
+/*
+*             ELSE  if (id is out of range )
+*                 PRINT error
+*                 RETURN 1
+*             ENDIF
+*/
+	else if (id<0 || id >255) {
+	  fprintf(stderr,
+	  "Line %d: Geom_id=%d, must be between 0 and 255\n",
+	  line, id); 
+	  DPRINT ("Leaving fill_tables with status=1\n"); 
+	  return(1); }
+
+/* 
+* A.14.4      STORE geometry name and info, using id as index
+*/
+	strncpy (mgotab.geom_name[id], strstr(blk,dummy), 60);
+	cnt++;
+    }  /*FOr*/
+/*
+* A.14    ENDFOR
+*/
+   DPRINT ("Geometry Defn table has %d entries\n", cnt);
+	
+
+/* 
+*
+* A.15    CLOSE the Table Defn file
+*/
+  fclose(infile);
+  infile= NULL;
+
+/*
+* 
+* A.16    RETURN 0 !success
+* END OF FUNCTION fill_tables
+*/
+  DPRINT ("Leaving fill_tables with no errors, status=0\n"); 
+  return (0); 
+}
+
+/*
+*
+*
+*
+* ===================================================================
+* B.  FUNCTION  locate_sect_heading
+*     PURPOSE:  search input file for the specified heading string
+*               until found/end of file;
+*     INPUT:    FILE *infile    Table file reading from
+*               char *heading    String to look for
+*               long *line       Line number w/in infile
+*
+*     RETURN CODE:
+*     1>  got end of file;
+*     0>  successful, variable line has been updated 
+* ===================================================================
+*/
+int	locate_sect_heading (FILE *infile, char *heading, long *line)
+{
+
+  DPRINT ("Entering locate_sect_heading w/heading=(%s)\n", heading);
+/*
+* B.1      WHILE (not end of file yet )
+*              READ next line
+*              INCREMENT line counter
+*              IF (find Heading in line just read) THEN
+*                  BREAK out of while loop
+*              ENDIF
+*          ENDWHILE
+*/
+   while (!feof(infile)) /* locate the correct section first */
+      {  fgets(blk, sizeof(blk), infile);
+	 *line += 1;
+         if (strstr (blk, heading) != NULL) break;
+      }
+/* 
+*
+* B.2      IF (end of file already) THEN
+*              PRINT cannot locate message
+*              CLOSE file
+*              RETURN 1
+*          ENDIF
+*/
+   if (feof(infile)) 
+      {  fprintf(stderr, "Error, cannot locate '%s'\n",heading);
+	 fclose(infile);
+	DPRINT ("Leaving locate_sect_heacing with bad status=1\n");
+	return(1); 
+      }
+/*
+*
+* B.3      RETURN 0 !success
+* END OF locate_sect_heading 
+*
+*/
+   DPRINT ("located (%s)\n", heading); 
+   return(0);
+}
+    
+/*
+*
+*
+*===================================================================
+* C.  FUNCTION  read_file_entry
+*
+*     PURPOSE:  reads next line (default to 100 chars long) from file;
+*               skip line if it's a blank line; 
+*
+*     RETURNS CODE:
+*       -1: error;    
+*        0: success, line is stored in 'final_block' with
+*           no beginning and trailing spaces;
+*        1: end of section;
+* ==================================================================
+            ... NOT USING D_PRINT IN HERE ...
+*/
+int	read_file_entry (FILE *infile, long *line, char *final_block)
+{
+int i, start;
+    
+/* 
+* C.1       INITIALIZE variables
+*           !Null out final_block !string to be returned
+*/
+   final_block[0]='\0';
+
+/*
+*
+* C.2       WHILE (not end of file and no error) DO
+*/
+   while (!feof(infile) && !ferror(infile)) {
+/*
+* C.2.1         GET next line from file
+*               IF (error) THEN
+*                   RETURN -1
+*               ENDIF
+*/
+     if (fgets(blk, 100, infile) == NULL) return(-1);
+/*
+* C.2.2       INCREMENT line counter
+*/
+     *line += 1;		/* keep count */
+/*
+* C.2.3         IF (it's a comment)  !#####
+*               THEN
+*                  RETURN 1  !end of this section
+*               ENDIF
+*/
+     if (!strncmp (blk, "#####", 5)) return (1);  /* end of Section*/
+
+/*
+* C.2.4         REPLACE newline char w/ null terminator
+*/
+     blk[strlen(blk)-1]= '\0'; /* replace newline char */ 
+
+/*
+* C.2.5         FIND if there are beginning spaces
+*               IF (line is all spaces)
+*               THEN
+*                   SKIP line !loop to get next line
+*               ENDIF
+*/
+     start= strspn (blk, " ");       /* beginning spaces */ 
+     if (start == strlen(blk)) continue; /* skip if blank line */
+
+/* 
+* C.2.6         FOR (each trailing spaces)
+*                   REPLACE with null terminator
+*               ENDFOR
+*/
+     for (i=strlen(blk)-1; blk[i]==' '; i--) 
+        blk[i]='\0'; 	       /* eliminate trail blanks */
+
+/*
+* C.2.7         COPY line over to final_block
+*/
+     strncpy (final_block, blk+start, 100);  /* copy over */
+     return(0);
+/* 
+* C.2.8         RETURN 0 !sucess
+* C.2       ENDWHILE 
+*/
+    } /* WHILE */
+}
+/*
+*
+* END OF FUNCTION read_file_entry
+*
+*/
+
+
+/*
+*
+*
+*===================================================================
+* D.  FUNCTION  load_table3
+*
+*     INPUT: FILE *infile	Table file reading from
+*            table3 *lvltab     ptr to array to store Level info
+*
+*     RETURN CODE:
+*       0> succesful, lvltab has been filled with info;
+*       1> error;
+*===================================================================
+*
+*/
+int  load_table3 (FILE *infile, table3 *lvltab)
+{
+int	id;		/* level id code */
+int	octs;		/* num of octets */
+int	t3_cnt=0;	/* num of entries in this table */
+int	i;		/* working var */
+
+  DPRINT (".. load_table3\n");
+  /* ----------------------------------------------
+     LOAD TABLE #3:  LEVEL DEFINITIONS
+     Table3's Format:  
+        Line 1:  lvlid numocts "meaning"
+	Line 2:  "octet 11 meaning" (optional) 
+	Line 3:  "octet 12 meaning" (optional) 
+     - no comments allowed; 
+     -'#####' is treated as end of this section;
+    ---------------------------------------------- */
+/*
+* D.1       SET up heading for Level section
+*/
+  strcpy (heading, "Line 3: Contents of octet 12");
+/*
+*
+* D.2       FUNCTION locate_sect_heading !search input file
+*           IF (didn't see heading) THEN
+*              RETURN 1
+*           ENDIF
+*/
+  if (locate_sect_heading (infile, heading,&line) ) return(1);
+
+/*
+*
+* D.3       WHILE (not end of file yet) DO
+*/
+  while (!feof(infile)) 
+  {
+/*
+* D.3.1        FUNCTION read_file_entry !get next line
+*              IF (failed) THEN
+*                 BREAK !quit
+*              ENDIF
+*/
+     if (read_file_entry (infile, &line, blk)) break;
+
+/*
+* D.3.2        IF (line doesn't start w/a number) 
+*              THEN
+*                 SKIP line
+*              ENDIF
+*/
+     if (!isdigit (blk[0])) continue;
+/*
+* D.3.3        IF (extract lvlid, num octets, dummy string) is OK
+*              THEN
+*/
+     if (sscanf (blk, "%d%d%s",&id,&octs,&dummy) == 3)  /* got new Line 1 */
+      {
+/*
+* D.3.3.1         IF (level id is out of range) THEN
+*                     PRINT error message
+*                     RETURN 1
+*                 ENDIF
+*/
+	if (id < 0 || id > 255) 
+	{ fprintf(stderr,
+	  "Line %d:  Levelid= %d, not between 0 and 255\n",line,id);
+	  return(1);
+	}
+/*
+* D.3.3.2         IF (number of octets is out of range) THEN
+*                     PRINT error message
+*                     RETURN 1
+*                 ENDIF
+*/
+	if (octs <0 || octs>2)
+	{ fprintf(stderr,
+	  "Line %d:  num octets=%d out of range\n", line, octs);
+	  return(1);
+	}
+
+/*
+* D.3.3.3         STORE number of octets
+*/
+        lvltab[id].num_octets  = octs;
+	/* dummy is 1st word of Mening str, locate it in BLK and
+	   copy max of 100 chars;  remove trailing spaces too 
+	*/
+/*
+* D.3.3.3         CHECK where level meaning begins
+*                 IF (failed) THEN
+*                     PRINT message
+*                     RETURN 1
+*                 ENDIF
+*/
+        if ((ptr= strstr (blk, dummy)) == NULL)
+    	  { fprintf(stderr,
+	    "Line %d: Error reading Lvel_Meaning\n",line);
+    	    return(1);
+          }
+/*
+* D.3.3.4         STORE meaning of level
+*/
+        strncpy (lvltab[id].meaning, ptr, 100);
+
+/* 
+* D.3.3.5         DEFAULT with no contents1 & contents2
+*/
+	lvltab[id].contents1[0]= '\0';
+	lvltab[id].contents2[0]= '\0';
+/*
+* D.3.3.6         SWITCH (number of octets)
+*/
+	switch (octs)
+	  {
+/*
+* D.3.3.6.1       1: !expecting 2 more content lines
+* D.3.3.6.1.1        IF (end of file OR
+*                         error in FUNCTION read_file_entry)
+*                    THEN
+*                         BREAK;
+*                    ENDIF
+* D.3.3.6.1.2        STORE contents1
+* D.3.3.6.1.3        IF (end of file OR
+*                       error in FUNCTION read_file_entry)
+*                    THEN
+*                         BREAK;
+*                    ENDIF
+* D.3.3.6.1.2        STORE contents2
+* D.3.3.6.1          done
+*/
+	    case 1: /* expecting 2 more content lines */
+     		if (feof(infile) ||
+	 	   read_file_entry (infile, &line, blk)) break;
+	        strncpy (lvltab[id].contents1, blk, 100);
+     		if (feof(infile) ||
+	 	   read_file_entry (infile, &line, blk)) break;
+	        strncpy (lvltab[id].contents2, blk, 100);
+		break;
+		
+/*
+* D.3.3.6.2       2: !expecting 1 more content line
+* D.3.3.6.2.1        IF (end of file OR
+*                         error in FUNCTION read_file_entry)
+*                    THEN
+*                         BREAK;
+*                    ENDIF
+* D.3.3.6.2.2        STORE contents1
+* D.3.3.6.2          done
+*/
+	    case 2: /* expecting 1 more content line */
+     		if (feof(infile) ||
+	 	   read_file_entry (infile, &line, blk)) break;
+	        strncpy (lvltab[id].contents1, blk, 100);
+		lvltab[id].contents2[0]= '\0';
+		break;
+	  }
+/*
+* D.3.3.6         ENDSWITCH 
+*/
+/*
+*
+* D.3.3.7         INCREMENT counter of entries
+*/
+	t3_cnt++;
+     } /*If */
+/*
+* D.3.3       ENDIF !extract ok
+*/    
+  }  /* WHile T3 */
+/*
+*
+* D.3       ENDWHILE !not end of file 
+*/
+  DPRINT ("Level Defn table  has %d entries\n",  t3_cnt);
+/*
+*
+* D.4       RETURN 0 !success
+*/
+  return(0);
+}
+/*
+*
+* END OF FUNCTION 
+*/
+
+/*
+*
+*
+*===================================================================
+* E.  FUNCTION  load_table2
+*
+*     INPUT: FILE *infile	Table file reading from
+*            table2 *parmtab    ptr to array of structs type table2
+*
+*     RETURN CODE:
+*       0> succesful, lvltab has been filled with info;
+*       1> error;
+*===================================================================
+*
+*/
+int   load_table2 (FILE *infile, table2 *parmtab)
+{
+int sub;	/* which sub table, 0 means main table */
+int code;	/* parm id */
+int Index;
+table2 *t2;	/* points to beginning of Main table/Sub table */
+
+  DPRINT (".. load_table2\n");
+  /* Table2's Format:  
+	parmid "parm desc" "unit" 
+     -any blks that doesn't have a decimal digit in 1st column
+     is treated as comment blks;
+     -'#####' is treated as end of this section;
+   */
+/*
+* E.1       FOR (each Table 2 to load) 
+*           DO
+*/
+  for (sub=0; sub <= 5; sub++)
+  {
+/*
+* E.1.1       SWITCH (which table to load)
+*                Table2:  
+*                   SET up pointer to begining of Table 2
+*                   SET up table 2 heading
+*                Table2-Sub A:
+*                   SET up pointer to begining of Table 2-A
+*                   SET up table 2-A heading
+*                Table2-Sub B:
+*                   SET up pointer to begining of Table 2-B
+*                   SET up table 2-B heading
+*                Table2-Sub C:
+*                   SET up pointer to begining of Table 2-C
+*                   SET up table 2-C heading
+*                Table2-Sub D:
+*                   SET up pointer to begining of Table 2-D
+*                   SET up table 2-D heading
+*                Table2-Sub E:
+*                   SET up pointer to begining of Table 2-E
+*                   SET up table 2-E heading
+*             ENDSWITCH
+*/
+     switch (sub) {
+           case 0: t2=parmtab; 
+     	           strcpy(heading,"Table 2"); break;
+           case 1: t2=parmtab[250].sub_tab2;
+           	   strcpy (heading, "Table 2 - Sub A"); break;
+           case 2: t2=parmtab[251].sub_tab2;
+           	   strcpy (heading, "Table 2 - Sub B"); break;
+           case 3: t2=parmtab[252].sub_tab2;
+           	   strcpy (heading, "Table 2 - Sub C"); break;
+           case 4: t2=parmtab[253].sub_tab2;
+           	   strcpy (heading, "Table 2 - Sub D"); break;
+           case 5: t2=parmtab[254].sub_tab2;
+                   strcpy (heading, "Table 2 - Sub E"); break;
+      } /* SWitch */
+
+/*
+* E.1.2       IF (FUNCTION locate_sec_heading) failed
+*             THEN
+*                 RETURN 1
+*             ENDIF
+*/
+     if (locate_sect_heading(infile, heading, &line)!= 0) return(1);
+
+/*
+* E.1.3       INIT entry counter
+*/
+     cnt=0;	/* number of entries in this table */
+/*
+* E.1.4       WHILE (not end of file yet) DO
+*/
+     while (!feof(infile)) 
+     {
+/*
+* E.1.4.1        IF (FUNCTION read_file_entry failed)
+*                THEN
+*                    BREAK
+*                ENDIF
+*/
+        if (read_file_entry (infile, &line, blk)) break;
+
+/*
+* E.1.4.2        IF (line doesn't start out with a number)
+*                THEN
+*                    CONTINUE  !skip line
+*                ENDIF
+*/
+        if (!isdigit(blk[0])) continue; /* skip comments */
+   
+
+/*
+* E.1.4.3        IF (fail to extract parm_id, dummy string)
+*                THEN
+*                    CONTINUE  !skip line
+*                ENDIF
+*/
+        /* get Code, Dummy is 1st word of Param Field  */
+        if (sscanf (blk, "%d%s", &code, dummy) != 2) 
+   	{ fprintf(stderr,
+	  "Line %d: fail to get code & param\n", line); return(1);}
+	
+/*
+* E.1.4.4        IF (parm_id is out of range)
+*                THEN
+*                    CONTINUE  !skip line
+*                ENDIF
+*/
+        if (code<0 || code>255) 
+	   continue;	/* skip invalid code */
+   
+        /* locate Param, move max of 75, then cap it where there are
+    	3 consecutive spaces 
+        */
+/*
+* E.1.4.5        IF (fail to track where string dummy starts)
+*                THEN
+*                    PRINT error message
+*                    RETURN 1
+*                ENDIF
+*/
+        if ((ptr= strstr (blk, dummy)) == NULL)
+   	{ fprintf(stderr,
+	 "Line %d: Error reading Field_Param\n",line); return(1);}
+
+
+/*
+* E.1.4.6        STORE parameter name
+*/
+        Index= ptr - blk;		/* pos of 1st Parm word */
+        strncpy (t2[code].field_param, ptr, 75);
+
+/*
+* E.1.4.7        IF (no two-spaces follow parm_name)
+*                THEN
+*                    PRINT error
+*                    RETURN 1
+*                ENDIF
+*/
+        if ((ptr= strstr (t2[code].field_param, "  ")) == NULL) 
+        { fprintf(stderr,
+           "Error on Line %d:  must have 2 spaces between Field & Unit\n",
+   	  line, code);
+   	  return(1);
+        }
+/*
+* E.1.4.8        CAP off parm_name where it ends
+*/
+        t2[code].field_param[ptr-t2[code].field_param]='\0';
+        Index += strlen(t2[code].field_param);	/* pos at end of Parm field */
+   
+        /* skip over spaces bet/w Parm and Unit fields and 
+           then copy max of 25 chars into Unit; 
+   	cap it where 2 spaces occur; 
+        */
+/*
+* E.1.4.9        LOCATE where Unit field begins
+* E.1.4.10       STORE Unit field
+*/
+        Index= strspn (blk+Index, " ");
+        strncpy (t2[code].unit, ptr+Index, 25);
+        if ((ptr= strstr (t2[code].unit, "  ")) != NULL) 
+   	t2[code].unit[ptr-t2[code].unit]='\0';
+	if (t2[code].unit[strlen(t2[code].unit)-1] == ' ')
+	t2[code].unit[strlen(t2[code].unit)-1] = '\0';
+/*
+* E.1.4.11       INCREMENT entry counter
+*/
+	cnt++;
+        }  /* T2 */
+/*
+* E.1.4       ENDWHILE !end of file
+*/
+
+      DPRINT ("Defn %s has %d entries\n", heading, cnt);
+  } /* FOr each table */
+/*
+* E.1       ENDFOR !each Table 2
+*/
+return(0);
+/*
+*
+* E.2       RETURN 0 !success
+*/
+}
+/* 
+* END OF FUNCTION
+*/
+
+
+/*
+*
+*
+*===================================================================
+* F.  FUNCTION  FTP_getfile 
+*
+*      PURPOSE: 
+*        builds and executes a Bourne script file to retreive 
+*        the file specified from remote site via Ftp call;
+*        get name of remote host & dir from "$pathnm/table.cfg";
+*        use curr userid as anonymous password;
+*
+*     INPUT: 
+*        FILE *infile	    Name of file to ftp
+*        char *loc_pathnm   full path where config file is
+*        "tables.cfg"       config file- has info of remote host
+*     
+*     RETURN CODE:
+*        0> sucessfully ftp-ed; 
+*        1> error:  create script/ftp err/missing table.cfg;
+*===================================================================
+*/
+int FTP_getfile (char *filenm, char *loc_pathnm)
+{
+FILE 	*f1, *f2;
+char	filename[200];
+char 	hostnm[100]; 	/* name of remote site  */
+char 	usernm[100];    /* using anonymous  */
+char 	passwd[100];	/* anonymous  */
+char 	pathnm[100];	/* full path of remote file to get  */
+int	n;		/* working var */
+
+
+  DPRINT ("Entering FTP_getfile (%s/%s)\n", loc_pathnm, filenm);
+
+/* Open external config file to get remote host info */
+/*
+* F.1       SET up name of local config file 
+*           !local_path/tables.cfg
+*/
+
+  sprintf (filename, "%s/tables.cfg", loc_pathnm);
+  DPRINT ("Read Remote host info from '%s'\n", filename);
+/*
+* 
+* F.2       IF (unable to open config file)
+*               PRINT error
+*               RETURN 1
+*           ENDIF
+*/
+  if ((f1=fopen (filename, "r"))==NULL) {
+    	fprintf(stderr,
+	"Warning: '%s' is missing, cannot try to FTP\n\n", filename);
+    	return(1);
+  	}
+/*
+*
+* F.3       READ hostname and remote pathname from file
+*           
+* F.4       CLOSE up config file
+*/
+	n = fscanf (f1, "%s%s", hostnm, pathnm);;
+	fclose(f1);	/* close Config File */
+
+/*
+*
+* F.5       IF (read failed)
+*              PRINT message
+*              RETURN 1
+*/
+  if (n  != 2) { 
+	fprintf(stderr,
+	"Warning: Fail to read '%s'\n", filename); 
+	return(1); 
+	}
+
+/*
+* 
+* F.6       SET password to "gribsimp22"
+*/
+  strcpy (passwd, "gribsimp22");
+
+ /* Ready to build Bourne script: */
+/*
+*
+* F.7       IF (create temp script file fails)
+*               PRINT error
+*               RETURN 1
+*           ENDIF
+*/
+  if ((f1=fopen ("temp_ftp_script","w"))==NULL) {
+  	fprintf(stderr,"Warning:  failed to build FTP script\n");
+  	return(1); 
+  	}
+
+/*
+*
+* F.8       CREATE ftp script & store in temp file
+*
+* F.9       CLOSE temp file
+*/
+	fprintf (f1, 
+	"#!/bin/sh\n"
+	"exec 1>&-;exec 2>&-\n"
+	"ftp -in %s << STOP\n"
+	"user anonymous %s\n"
+	"cd %s\n"
+	"lcd %s\n"
+	"get %s\n"
+	"quit\n"
+	"STOP\n"
+	"exit\n",
+	hostnm,  passwd, pathnm, loc_pathnm, filenm);
+	fclose(f1);
+
+	DPRINT ("execute ftp script: \n"
+	"   #!/bin/sh\n   exec 1>&-;exec 2>&-\n"
+	"   ftp -in %s << STOP\n   user anonymous %s\n"
+	"   cd %s\n   lcd %s\n   get %s\n   quit\n   STOP\n   exit\n",
+	hostnm,  passwd, pathnm, loc_pathnm, filenm);
+/*
+*
+* F.10      EXECUTE temp script
+*
+* F.11      REMOVE script
+*/
+  n= system ("chmod 755 temp_ftp_script;temp_ftp_script");
+  unlink ("temp_ftp_script"); 
+
+/*
+*
+* F.12      IF (execute script failed)
+*               PRINT error
+*               RETURN 1
+*           ENDIF
+*/
+  if (n!=0) {	/* ck Stat of Systm call */
+  	fprintf(stderr,"Warning:  system call to ftp failed\n");
+  	return(1);
+  	}
+
+/*
+*
+* F.13      CHECK if ftp-ed file is available & readable
+*           IF (failed)
+*               PRINT warning
+*               RETURN 1
+*           ENDIF
+*/
+  sprintf (filename, "%s/%s", loc_pathnm, filenm);
+  if ((f2= fopen(filename, "rb+"))==NULL) {
+	fprintf(stderr,"Warning: '%s' not avail on %s in %s\n\n",
+	filenm, hostnm, pathnm);
+	return(1);
+	}
+/*
+*
+* F.14      CLOSE up ftp-ed file
+*/
+  fclose(f2);
+
+/*
+* F.15      RETURN 0 !success
+*/
+DPRINT ("Leaving FTP_getfile with no errors\n");
+return(0);
+
+/*
+* END OF FUNCTION
+*
+*/
+}

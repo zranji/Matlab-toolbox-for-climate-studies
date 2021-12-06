@@ -1,0 +1,19 @@
+#!/bin/sh
+# this script greps all the lines that start with '* ' from the input 
+# file;  Results are redirected to file strip_comments.out
+
+if [ $# -eq 0 ]; then
+	echo "Usage= `basename $0`  Filename"
+	exit;
+fi
+
+for fn in $*
+do
+	fout=`basename $fn`.out
+	rm $fout 2>&-
+	echo "++++ FILENAME:  $fn  " >> $fout
+	egrep -e '^\*[^/]' $fn |cut -c2- >> $fout
+	#egrep -e '^\* |^\*	' $fn |cut -c2- >> $fout
+	echo "++++ end of $fn  " >> $fout
+	echo " " >> $fout
+done

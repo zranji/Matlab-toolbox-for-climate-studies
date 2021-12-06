@@ -1,0 +1,111 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: readmessage - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\ADMINI~1\CONFIG~1\Temp\RSP199.tmp" with contents
+[
+/nologo /MT /W3 /GX /O2 /I "c:\matlabr11\extern\include" /D "NDEBUG" /D "WIN32" /D "_WINDOWS" /D "MATLAB_MEX_FILE" /FR".\Release/" /Fp".\Release/readmessage.pch" /YX /Fo".\Release/" /Fd".\Release/" /FD /c 
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\apply_bitmap.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\apply_bitmap_DOUBLE.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\gbyte.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\grib_seek_b.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\gribdec.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\gribdec_DOUBLE.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\gribgetbds.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\gribgetbds_DOUBLE.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\gribgetbms.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\gribgetgds.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\gribgetpds.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribtomatlab.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\hdr_print.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\init_struct.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\printer.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\gribsimp\prt_err.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\readgrib_b.c"
+"C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\readmessage_mex.c"
+]
+Creating command line "xicl6.exe @C:\DOCUME~1\ADMINI~1\CONFIG~1\Temp\RSP199.tmp" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\CONFIG~1\Temp\RSP19A.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib mymeximports.lib /nologo /subsystem:windows /dll /incremental:no /pdb:".\Release/readmessage2.pdb" /debug /machine:I386 /def:".\readmessage.def" /out:".\..\..\readmessage2.dll" /implib:".\Release/readmessage2.lib" 
+.\Release\apply_bitmap.obj
+.\Release\apply_bitmap_DOUBLE.obj
+.\Release\gbyte.obj
+.\Release\grib_seek_b.obj
+.\Release\gribdec.obj
+.\Release\gribdec_DOUBLE.obj
+.\Release\gribgetbds.obj
+.\Release\gribgetbds_DOUBLE.obj
+.\Release\gribgetbms.obj
+.\Release\gribgetgds.obj
+.\Release\gribgetpds.obj
+.\Release\gribtomatlab.obj
+.\Release\hdr_print.obj
+.\Release\init_struct.obj
+.\Release\printer.obj
+.\Release\prt_err.obj
+.\Release\readgrib_b.obj
+.\Release\readmessage_mex.obj
+]
+Creating command line "xilink6.exe @C:\DOCUME~1\ADMINI~1\CONFIG~1\Temp\RSP19A.tmp"
+<h3>Output Window</h3>
+Compiling...
+apply_bitmap.c
+apply_bitmap_DOUBLE.c
+gbyte.c
+grib_seek_b.c
+gribdec.c
+gribdec_DOUBLE.c
+gribgetbds.c
+gribgetbds_DOUBLE.c
+gribgetbms.c
+gribgetgds.c
+gribgetpds.c
+gribtomatlab.c
+hdr_print.c
+init_struct.c
+printer.c
+prt_err.c
+readgrib_b.c
+readmessage_mex.c
+C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\readmessage_mex.c(14) : warning C4101: 'chLon' : unreferenced local variable
+C:\Users\Meteo\MLToolboxLinux\MeteoLab\common\srcMex\readmessage_mex.c(11) : warning C4101: 'DumStr' : unreferenced local variable
+Linking...
+xilink6: executing 'C:\ARCHIV~1\MICROS~3\VC98\Bin\link.exe'
+   Creating library .\Release/readmessage2.lib and object .\Release/readmessage2.exp
+Creating temporary file "C:\DOCUME~1\ADMINI~1\CONFIG~1\Temp\RSP19E.tmp" with contents
+[
+/nologo /o".\Release/buildIndex.bsc" 
+.\Release\apply_bitmap.sbr
+.\Release\apply_bitmap_DOUBLE.sbr
+.\Release\gbyte.sbr
+.\Release\grib_seek_b.sbr
+.\Release\gribdec.sbr
+.\Release\gribdec_DOUBLE.sbr
+.\Release\gribgetbds.sbr
+.\Release\gribgetbds_DOUBLE.sbr
+.\Release\gribgetbms.sbr
+.\Release\gribgetgds.sbr
+.\Release\gribgetpds.sbr
+.\Release\gribtomatlab.sbr
+.\Release\hdr_print.sbr
+.\Release\init_struct.sbr
+.\Release\printer.sbr
+.\Release\prt_err.sbr
+.\Release\readgrib_b.sbr
+.\Release\readmessage_mex.sbr]
+Creating command line "bscmake.exe @C:\DOCUME~1\ADMINI~1\CONFIG~1\Temp\RSP19E.tmp"
+Creating browse info file...
+<h3>Output Window</h3>
+
+
+
+<h3>Results</h3>
+readmessage2.dll - 0 error(s), 2 warning(s)
+</pre>
+</body>
+</html>

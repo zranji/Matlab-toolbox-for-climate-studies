@@ -1,0 +1,113 @@
+# Microsoft Developer Studio Generated Dependency File, included by readmessage.mak
+
+.\gribsimp\apply_bitmap.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	
+
+.\gribsimp\gbyte.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	
+
+.\gribsimp\grib_seek_b.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	
+
+.\gribsimp\gribdec.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	
+
+.\gribsimp\gribgetbds.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	
+
+.\gribsimp\gribgetbms.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	
+
+.\gribsimp\gribgetgds.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	
+
+.\gribsimp\gribgetpds.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	
+
+.\gribtomatlab.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	".\gribsimp\tables.h"\
+	".\readmessage.h"\
+	
+
+.\gribsimp\hdr_print.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	
+
+.\gribsimp\init_struct.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	
+
+.\gribsimp\printer.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	".\gribsimp\tables.h"\
+	
+
+.\gribsimp\prt_err.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	
+
+.\readgrib_b.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	".\gribsimp\tables.h"\
+	".\readmessage.h"\
+	
+
+.\readmessage.c : \
+	"..\..\..\..\..\..\..\matlabr11\extern\include\matrix.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\mex.h"\
+	"..\..\..\..\..\..\..\matlabr11\extern\include\tmwtypes.h"\
+	".\gribsimp\grib.h"\
+	".\gribsimp\tables.h"\
+	".\readmessage.h"\
+	

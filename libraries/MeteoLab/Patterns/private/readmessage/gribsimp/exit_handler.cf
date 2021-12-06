@@ -1,0 +1,78 @@
+#include <stdio.h>
+#include "tables.h"
+#include "grib.h"
+
+extern int debug;               /* for debug print  */
+extern  FILE  *IndexFile;       /* index file */
+extern  table2 *parmtab;  	/* structure for parameter ID table */
+extern  table3 *lvltab;         /* struct for lvl table */
+extern  char  *curr_ptr;        /* pointer to valid GRIB message        */
+extern  float *grib_data;       /* array of decoded data values */
+
+void    exit_handler (int exit_code)
+{
+int  subnum;
+
+    DPRINT ("Entering Exit_Handler...\n ");
+
+/*
+*
+* A.1  IF (message pointer is defined)
+*         FREE up its storage;
+*      ENDIF
+*/
+   if (curr_ptr!=NULL)  free(curr_ptr);
+
+/*
+*
+* A.2  IF (data array is defined)
+*         FREE up its storage;
+*      ENDIF
+*/
+   if (grib_data!=NULL) free(grib_data);
+      
+/*
+*
+* A.3  IF (Index file is still open)
+*         CLOSE file;
+*      ENDIF
+*/
+   if (IndexFile!=NULL) fclose(IndexFile);
+
+
+/*
+*
+* A.4  IF (parameter table is defined) 
+*         FOR (each sub-table)
+*             IF (sub-parameter table is defined)
+*                FREE sub-table storage
+*             ENDIF
+*         ENDLOOP
+*         FREE main table storage
+*      ENDIF
+*/
+  if (parmtab != NULL) {
+    for (subnum=250; subnum <= 254; subnum++) 
+       if (parmtab[subnum].sub_tab2) free(parmtab[subnum].sub_tab2);
+    free (parmtab); 
+   }
+
+/*
+*
+* A.5   IF (Level table is defined) THEN
+*          FREE up its storage;
+*       ENDIF 
+*/
+   if (lvltab != NULL) free(lvltab);
+
+/*
+*
+* A.7   DEBUG printing
+*/
+   DPRINT ("Exiting program with status= %d\n\n", exit_code);
+/*
+*
+* A.6   EXIT PROGRAM
+*/
+   exit(exit_code);
+}

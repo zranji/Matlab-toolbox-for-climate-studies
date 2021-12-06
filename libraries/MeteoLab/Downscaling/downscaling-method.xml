@@ -1,0 +1,9 @@
+<downscaling>
+  <name>Analogues (default)</name>
+  <description>Default method used as benchmark in the downscaling portal</description>
+  <properties>
+    <property name="InferenceMethod" value="mean"/>
+    <property name="AnalogueNumber" value="1"/>
+  </properties>
+  <type>ANALOGES</type>
+</downscaling>
